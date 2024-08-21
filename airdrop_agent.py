@@ -5,36 +5,51 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def fetch_latest_news(query: str) -> Optional[str]:
+def fetch_airdrop_details() -> Optional[str]:
     """
-    Fetches the latest news articles based on the user query.
-
-    :param query: The query to search for in the news articles.
-    :return: A summary of the latest news articles, or None if an error occurs or the articles cannot be found.
+    Fetches comprehensive details about the most recent blockchain airdrops available for August 2024.
+    
+    :return: A summary of the top airdrops, or None if an error occurs or no airdrops are found.
     """
-    url = f"https://api.gdeltproject.org/api/v2/doc/doc?query={query}&mode=artlist&format=json"
+    url = "http://localhost:8000/api/v1/chat"
+    
+    prompt = """
+        "I need comprehensive details about the most recent blockchain airdrops available for August 2024. "
+        "Please identify the top airdrops currently active or upcoming within this month. For each airdrop, "
+        "provide the following information: the project name, the blockchain network it is associated with, "
+        "the exact URL where users can claim the airdrop, and any necessary steps or requirements for claiming "
+        "the airdrop. If the airdrop is restricted to certain users or regions, include that information as well. "
+        "Additionally, mention any deadlines or important dates related to the airdrop, such as when the claim period "
+        "ends or when tokens will be distributed. Ensure that the details are accurate and up-to-date to avoid "
+        "any issues for users attempting to claim these airdrops. Lastly, if there are any potential risks or "
+        "scams associated with these airdrops, briefly mention them and provide guidance on how to proceed safely."
+    )
+    """
+    
+    data = {
+        "user_id": "user123",
+        "session_id": "session123",
+        "chat_data": {
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+    }
 
     try:
-        response = requests.get(url)
+        response = requests.post(url, json=data)
         response.raise_for_status()
-        data = response.json()
-        
-        articles = data.get("articles", [])
-        if articles:
-            summary = "\n\n".join([f"Title: {article.get('title')}\nLink: {article.get('url')}" for article in articles[:5]])
-            return summary.strip()
-        else:
-            return "No articles found."
+        return response.json()
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
 
 if __name__ == "__main__":
     my_agent = HiveAgent(
-       name="news_agent",
-       functions=[fetch_latest_news],
+       name="airdrop_agent",
+       functions=[fetch_airdrop_details],
        config_path="./hive_config.toml",
-       instruction="Use appropriate news sources to answer the questions.",
+       instruction="Use appropriate sources to answer the questions about blockchain airdrops.",
     )
     
     my_agent.run()
